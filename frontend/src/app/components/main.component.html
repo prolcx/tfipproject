@@ -1,0 +1,35 @@
+<h1>Good Day! {{loginUser}}</h1>
+
+<button (click)='addFood()'>Add Food</button>
+
+<h1>Daily Nutrients Intake</h1>
+<table class="table">
+    <thead class="thead-dark">
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">Food</th>
+        <th scope="col">Calories</th>
+        <th scope="col">Carb</th>
+        <th scope="col">Fat</th>
+        <th scope="col">Sugar</th>
+        <th scope="col">Protein</th>
+        <th scope="col">Cholesterol</th>
+        <th scope="col">Fiber</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let a of todayFoodList; let i=index">
+        <th scope="row">{{i+1}}</th>
+        <td>{{a.title}}</td>
+        <td>{{a.calories}}g</td>
+        <td>{{a.carbs}}g</td>
+        <td>{{a.fat}}g</td>
+        <td>{{a.sugar}}g</td>
+        <td>{{a.protein}}g</td>
+        <td>{{a.cholesterol}}mg</td>
+        <td>{{a.fiber}}g</td>
+        <td><button>X</button></td>
+      </tr>
+    </tbody>
+    <button (click)='saveDiet()'>Save!</button>
+  </table>
