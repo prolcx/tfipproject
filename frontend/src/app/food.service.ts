@@ -7,6 +7,7 @@ const SERVER_INSERT_ID = '/id'
 const SERVER_DASHBOARD = '/dashboard'
 const SERVER_DASHBOARD_PROGRESS = '/dashboard/progress'
 const SERVER_INSERT_SAVE = '/save'
+const SERVER_DASHBOARD_DELETE = '/dashboard/delete'
 
 const SERVER_INSERT_LOGIN = '/login'
 
@@ -41,6 +42,12 @@ export class FoodService {
     async saveDiet(todayFoodList): Promise<any>{
         // console.log(todayFoodList)
         return await this.http.post<any>(SERVER_INSERT_SAVE, todayFoodList)
+        .toPromise()
+    }
+
+    async deleteDashBoardFood(id): Promise<any>{
+        console.log(id)
+        return await this.http.delete<any>(`${SERVER_DASHBOARD_DELETE}/${id}`)
         .toPromise()
     }
 }

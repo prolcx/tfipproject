@@ -1,4 +1,5 @@
 <img src="https://c4.wallpaperflare.com/wallpaper/443/456/60/sandwich-girl-sleepy-meat-anime-wallpaper-preview.jpg" alt="" class="center">
+<br>
 
 <form [formGroup] = 'foodForm'>
     <div class="form-group row">
@@ -13,43 +14,59 @@
 </form> 
 <br>
 
-<h1>Search Result</h1>
-<div *ngFor="let a of foodResult">
-    <div class="card mb-3" style="max-width: 100%;">
-        <div class="row no-gutters">
-          <div class="col-md-4">
-            <img src={{a.imageUrl}} class="card-img" alt="...">
-          </div>
-          <div class="col-md-8">
-            <div class="card-body">
-              <h5 class="card-title">{{a.title}}</h5>
-              <p class="card-text">by {{a.restaurant}}</p>
-              <button class="addButton" (click)='addFood(a)'>Add</button>
+<div *ngIf="foodResultTest">
+  <h1>Search Result</h1>
+  <div *ngFor="let a of foodResult">
+      <div class="card mb-3" style="max-width: 100%;">
+          <div class="row no-gutters">
+            <div class="col-md-4">
+              <img src={{a.imageUrl}} class="card-img" alt="...">
+            </div>
+            <div class="col-md-8">
+              <div class="card-body">
+                <h5 class="card-title">{{a.title}}</h5>
+                <p class="card-text">by {{a.restaurant}}</p>
+                <button class="addButton" (click)='addFood(a)'>Add</button>
+              </div>
             </div>
           </div>
-        </div>
-    </div>
+      </div>
+  </div>
 </div>
 <br>
 
-<h1>Chosen Food</h1>
-<table class="table">
-    <thead class="thead-dark">
-      <tr>
-        <th scope="col">#</th>
-        <th scope="col">Food</th>
-        <th scope="col">Benchmark Source</th>
-        <th scope="col">Remove?</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let b of foodList; let i=index">
-        <th scope="row">{{i+1}}</th>
-        <td>{{b.title}}</td>
-        <td>{{b.restaurant}}</td>
-        <td><button>X</button></td>
-      </tr>
-    </tbody>
-    <button [routerLink]="['/', 'dashboard']">Back</button>
-    <button (click)='confirmFood()'>Confirm</button>
+<div *ngIf="foodAddedTest">
+  <h1>Chosen Food</h1>
+  <table class="table">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Food</th>
+          <th scope="col">Benchmark Source</th>
+          <th scope="col">Remove?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let b of foodList; let i=index">
+          <th scope="row">{{i+1}}</th>
+          <td>{{b.title}}</td>
+          <td>{{b.restaurant}}</td>
+          <td><button (click)="deleteFoodListItem(i)">X</button></td>
+        </tr>
+      </tbody>
   </table>
+</div>
+<br>
+<!-- <button [routerLink]="['/', 'dashboard']">Back</button>
+<button (click)='confirmFood()'>Confirm</button> -->
+<div class="d-flex justify-content-end align-items-center mt-4">
+  <button [routerLink]="['/', 'dashboard']" class="btn btn-lg btn-success">
+    <span style="margin-right: 5px !important;">Back</span>
+    <i class="fas fa-door-open"></i>
+  </button>
+</div><div class="d-flex justify-content-end align-items-center mt-4">
+  <button (click)='confirmFood()' class="btn btn-lg btn-success">
+    <span style="margin-right: 5px !important;">Confirm</span>
+    <i class="fas fa-door-open"></i>
+  </button>
+</div>

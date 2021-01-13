@@ -11,12 +11,15 @@ const jwt = require('jsonwebtoken')
 const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy
 
-//condigure mongoDB
-// const MongoClient = require('mongodb').MongoClient
-// const { parse } = require('path')
-// const MONGO_URL = 'mongodb://localhost:27017'
-// const mongoClient = new MongoClient(MONGO_URL,
-//     {useNewUrlParser: true, useUnifiedTopology: true})
+//mongo seteup
+const MongoClient = require('mongodb').MongoClient
+const MONGO_URL = 'mongodb://localhost:27017'
+const mongoClient = new MongoClient(MONGO_URL,
+    {useNewUrlParser: true, useUnifiedTopology: true})
+
+//mongo database setup
+const DATABASE = 'food'
+const COLLECTION = 'nutrient'
 
 //configure my sql
 //credential
@@ -41,10 +44,11 @@ const queryDashBoardProgress = `select sum(calories) as totalCalories, sum(satur
     round(sum(saturated)/sum(saturatedNeeded)*100, 0) as dailySaturated, round(sum(trans)/sum(transNeeded)*100, 0) as dailyTrans, 
     round(sum(carbohydrates)/sum(carbsNeeded)*100, 0) as dailyCarbohydrates, round(sum(sugar)/sum(sugarNeeded)*100, 0) as dailySugar, 
     round(sum(protein)/sum(proteinNeeded)*100, 0) as dailyProtein from nutrition where date= ? and username= ?`
+const deleteDashBoard = 'delete from nutrition where id = ?'
 
 //Processing SQL queries
 const makeQuery = (sql, pool) =>{
-	console.log(sql)
+	// console.log(sql)
 	return (async (args)=>{
 		const conn = await pool.getConnection()
 		try{
@@ -63,6 +67,7 @@ const makeQuery = (sql, pool) =>{
 const getLogin = makeQuery(queryLogin, pool)
 const getDashBoardDaily = makeQuery(queryDashBoard, pool)
 const getDashBoardProgress = makeQuery(queryDashBoardProgress, pool)
+const deleteDashBoardFood = makeQuery(deleteDashBoard, pool)
 
 //core and configure passport
 passport.use(new LocalStrategy(
@@ -175,35 +180,56 @@ app.post('/id', async (req, resp) => {
 
     foodNutrientResult = []
     for (let c of req.body) {
-        const id= c.id
-        const url = withQuery(
-            ENDPOINT_FOOD_ID_SEARCH+id, {
-                apiKey: API_KEY,
-            })
-        console.info('search food by id url: ', url)
-        
-        const d = await fetch(url)
-        const foodNutrientSearch = await d.json()
-        
-        console.info("foodNutrientSearch: ", foodNutrientSearch)
-        
-        // save the data here
-        foodNutrientResult.push(foodNutrientSearch)
+
+        //insert mongo search here, 
+        //make sure mongo give the correct data type
+        //use continue; pushing to foodNutrientSearch
+        const mongoData = await mongoClient.db(DATABASE).collection(COLLECTION).find({id: c.id}).toArray()
+
+        if(mongoData.length>0) {
+            foodNutrientResult.push(mongoData[0])
+            continue
+        }
+
+        else{
+            const id= c.id
+            const url = withQuery(
+                ENDPOINT_FOOD_ID_SEARCH+id, {
+                    apiKey: API_KEY,
+                })
+            console.info('search food by id url: ', url)
+            
+            const d = await fetch(url)
+            const foodNutrientSearch = await d.json()
+            
+            console.info("foodNutrientSearch: ", foodNutrientSearch)
+            
+            // save the data here
+            foodNutrientResult.push(foodNutrientSearch)
+        }
     }    
     resp.status(200)
     resp.json(foodNutrientResult)
 })
 
 //POST Request: Save the daily diet into Mysql
-app.post('/save', (req, resp)=>{
+app.post('/save', async (req, resp)=>{
 
     const todayFoodList = req.body
-    const insertTodo = async (todayFoodList) =>{
+
+    const cacheData = todayFoodList.find(i => i.title === 'cache');
+    const cacheDataIndex = todayFoodList.findIndex(i => i.title === 'cache')
+    const storingFoodList = todayFoodList.slice(0, cacheDataIndex)
+    const mongoCacheList = []
+    
+    // console.info('cacheData: ', cacheData)
+
+    const insertTodo = async (storingFoodList) =>{
         const conn = await pool.getConnection()
         try{
             await conn.beginTransaction()
             
-            for( let e of todayFoodList) {
+            for( let e of storingFoodList) {
             await conn.query(`INSERT INTO nutrition (food, calories, carbohydrates, fat, sugar, protein, cholesterol, 
                 fiber, date, username, foodId, caloriesNeeded, carbsNeeded, fatNeeded, sugarNeeded, proteinNeeded, 
                 cholesterolNeeded, fiberNeeded, saturatedNeeded, saturated, trans, transNeeded) 
@@ -216,11 +242,27 @@ app.post('/save', (req, resp)=>{
             await conn.commit()
         } catch(e){
             conn.rollback()
+            console.info('mysql rollback occurred')
         } finally {
             conn.release()
         }
     }
-    insertTodo(todayFoodList)
+    
+    for(let f of cacheData.array) {
+    const mongoData = await mongoClient.db(DATABASE).collection(COLLECTION).find({id: f.id}).toArray()
+    if (mongoData.length<=0)
+        mongoCacheList.push(f)
+    }
+    
+    // console.info('mongo cachelist array: ', mongoCacheList)
+    const p2 = insertTodo(storingFoodList)     //to be removed after promise all is done
+    const p3 = mongoClient.db(DATABASE).collection(COLLECTION).insertMany(mongoCacheList)
+
+    Promise.all([p2,p3])
+    .then(()=>{
+        console.info('operation succeed')
+    })
+    .catch(err=>{ console.error('One of the insert (mysql / mondodb) failed: ', err)})
     
     resp.status(200).json({})
             
@@ -267,20 +309,29 @@ app.post('/login',
     }
 )
 
-//listen
-pool.getConnection()
-.then( conn =>{
-    console.info('Pinging Database...')
-    const p0 = Promise.resolve(conn)
-    const p1 = conn.ping()
-    return Promise.all([p0,p1])
+//DELETE Request: Deleting selected item in mysql via id
+app.delete('/dashboard/delete/:id', (req, resp)=>{
+    
+    console.info('id to be deleted: ', req.params.id)
+    deleteDashBoardFood(req.params.id)
+   
+    resp.status(200).json({})
+    
 })
-.then(result =>{
-    const conn = result[0]
+
+//test ping of my sql and mongo
+const p0 = (async () => {
+    const conn = await pool.getConnection()
+    await conn.ping()
     conn.release()
-    app.listen(PORT, () =>{
+    return true
+})()
+const p1 = mongoClient.connect()
+
+Promise.all([p0,p1])
+.then(()=>{
+    app.listen(PORT,()=>{
         console.info(`Application started at ${PORT} at ${new Date()}`)
     })
-}).catch(e=>{
-    console.error('Cannot start server: ',e)
 })
+.catch(err=>{ console.error('Cant connect to the port !!!!', err)})

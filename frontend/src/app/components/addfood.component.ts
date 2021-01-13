@@ -11,16 +11,24 @@ import { FoodService, MemoryService } from '../food.service';
 export class AddfoodComponent implements OnInit {
 
   foodForm: FormGroup
-  foodResult: []
+  foodResult: [] = []
   foodList: any[] = []
+  foodResultTest: boolean
+  foodAddedTest: boolean
 
   constructor(private fb: FormBuilder, private foodSvc: FoodService, 
     private router: Router, private memorySvc: MemoryService) { }
 
   ngOnInit(): void {
     this.foodForm = this.createForm()
+   
     this.foodList = this.memorySvc.foodChosen
+    // console.info('>>>food chosen: ', this.memorySvc.foodChosen)
+    if(this.foodResult.length<=0)
+      this.foodResultTest = false
     
+    if(this.foodList.length<=0)
+      this.foodAddedTest = false
   }
 
   private createForm(): FormGroup {
@@ -34,12 +42,14 @@ export class AddfoodComponent implements OnInit {
     .then((result)=>{
       console.info('food you try to search: ', result)
       this.foodResult = result
+      this.foodResultTest = true
     })
   }
 
   addFood(a) {
     console.info(a)
     this.memorySvc.foodChosen.push(a)
+    this.foodAddedTest = true
     console.info('food you have choose (single added): ', this.memorySvc.foodChosen)
   } 
 
@@ -62,6 +72,10 @@ export class AddfoodComponent implements OnInit {
         this.router.navigate([ '/dashboard' ])
       })
     }
+  }
+
+  deleteFoodListItem(i){
+    this.foodList.splice(i, 1)
   }
 
 }

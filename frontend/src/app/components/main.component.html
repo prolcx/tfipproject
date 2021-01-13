@@ -3,7 +3,7 @@
 <form [formGroup] = 'dashboardForm'>
   <div>
     <tr>
-      <td><h3>Intake level on: </h3></td>
+      <td><h3>Intake level on: &nbsp;&nbsp;</h3></td>
       <td><input type="date" formControlName='date' (change)="loading()"></td>
     </tr>
   </div>
@@ -86,13 +86,13 @@
       <td>{{a.protein}}g</td>
       <td>{{a.cholesterol}}mg</td>
       <td>{{a.fiber}}g</td>
-      <td><button>X</button></td>
+      <td><button (click)="deleteDashBoardItem(a.id)">X</button></td>
     </tr>
   </tbody>
 </table>
 
 <button (click)='addFood()'>Add Food</button>
-
+<br><br>
 <h4>Food Just Added</h4>
 <table class="table">
     <thead class="thead-dark">
@@ -119,8 +119,9 @@
         <td>{{a.protein}}g</td>
         <td>{{a.cholesterol}}mg</td>
         <td>{{a.fiber}}g</td>
-        <td><button>X</button></td>
+        <td><button (click)="deleteJustAddedItem(i)">X</button></td>
       </tr>
     </tbody>
+    <br>
     <button (click)='saveDiet()'>Save!</button>
   </table>

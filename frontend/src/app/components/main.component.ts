@@ -57,8 +57,7 @@ export class MainComponent implements OnInit {
       // perform check on mongo db, if existing, dont cache, if not, cache
       // cache the mongodb here the raw food nutrition data you have searched
       // perform custom transaction here
-      
-      //this.todayFoodList.push({title: 'cache', array: this.memorySvc.foodNutrition})
+      this.todayFoodList.push({title: 'cache', array: this.memorySvc.foodNutrition})
 
       this.memorySvc.clearNutrition()
       this.foodSvc.saveDiet(this.todayFoodList)       //When user add food after they saved, it will duplicately uploading the previous items to the database, please fix it.
@@ -148,8 +147,16 @@ export class MainComponent implements OnInit {
     .catch((e)=>{
       console.info(e)
     })
+  }
 
-    
+  async deleteDashBoardItem(id) {
+    await this.foodSvc.deleteDashBoardFood(id)
+    await this.loading()
+  }
+
+  deleteJustAddedItem(i) {
+    this.todayFoodList.splice(i, 1)
+    this.memorySvc.foodNutrition.splice(i, 1)
   }
 
 }
