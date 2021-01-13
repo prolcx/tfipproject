@@ -1,0 +1,19 @@
+.progress {
+    width: 75%;
+    position: absolute;
+    left: 0px;
+    
+
+}
+
+.indicator {
+    position: absolute;
+    right: 250px;
+}
+
+.image { 
+    position: absolute;
+    /* width: 25%; */
+    top: 150px;
+    right: 0px;
+ }

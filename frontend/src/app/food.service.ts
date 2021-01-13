@@ -4,6 +4,8 @@ import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot } from
 
 const SERVER_INSERT = '/'
 const SERVER_INSERT_ID = '/id'
+const SERVER_DASHBOARD = '/dashboard'
+const SERVER_DASHBOARD_PROGRESS = '/dashboard/progress'
 const SERVER_INSERT_SAVE = '/save'
 
 const SERVER_INSERT_LOGIN = '/login'
@@ -21,6 +23,18 @@ export class FoodService {
     async postFoodChosen(foodChosen): Promise<any>{
         // console.log(foodChosen)
         return await this.http.post<any>(SERVER_INSERT_ID, foodChosen)
+        .toPromise()
+    }
+
+    async dashBoardLoading(selection): Promise<any>{
+        // console.log(selection)
+        return await this.http.get<any>(`${SERVER_DASHBOARD}/${selection.date}${selection.name}`)
+        .toPromise()
+    }
+
+    async dashBoardLoadingProgress(selection): Promise<any>{
+        // console.log(selection)
+        return await this.http.get<any>(`${SERVER_DASHBOARD_PROGRESS}/${selection.date}${selection.name}`)
         .toPromise()
     }
 

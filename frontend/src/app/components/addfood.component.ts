@@ -47,10 +47,11 @@ export class AddfoodComponent implements OnInit {
 
     if(this.memorySvc.foodChosen.length>0){
       this.memorySvc.notYetSave = true
+      //perform checking in mongo if the data exist, if exist dont have to use api call, if not perform as below
+      //if dont use api call, retrieve from mongo and push it to nutrient
+
       this.foodSvc.postFoodChosen(this.foodList)
       .then((result)=>{
-        
-        console.info('result to be insert into nutrient array: ', result)
 
         for(let each of result) {
         this.memorySvc.foodNutrition.push(each)

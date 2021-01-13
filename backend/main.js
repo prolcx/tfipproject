@@ -32,6 +32,15 @@ const pool = mysql.createPool({
 
 //sql queries
 const queryLogin = 'select * from login where username = ?'
+const queryDashBoard = 'select * from nutrition where date = ? and username = ?'
+const queryDashBoardProgress = `select sum(calories) as totalCalories, sum(saturated) as totalSaturated, 
+    sum(trans) as totalTrans, sum(carbohydrates) as totalCarbohydrates, sum(sugar) as totalSugar, 
+    sum(protein) as totalProtein, sum(caloriesNeeded) as caloriesPercent, sum(saturatedNeeded) as saturatedPercent, 
+    sum(transNeeded) as transPercent, sum(carbsNeeded) as carbohydratesPercent, sum(sugarNeeded) as sugarPercent, 
+    sum(proteinNeeded) as proteinPercent, round(sum(calories)/sum(caloriesNeeded)*100, 0) as dailyCalories, 
+    round(sum(saturated)/sum(saturatedNeeded)*100, 0) as dailySaturated, round(sum(trans)/sum(transNeeded)*100, 0) as dailyTrans, 
+    round(sum(carbohydrates)/sum(carbsNeeded)*100, 0) as dailyCarbohydrates, round(sum(sugar)/sum(sugarNeeded)*100, 0) as dailySugar, 
+    round(sum(protein)/sum(proteinNeeded)*100, 0) as dailyProtein from nutrition where date= ? and username= ?`
 
 //Processing SQL queries
 const makeQuery = (sql, pool) =>{
@@ -52,6 +61,8 @@ const makeQuery = (sql, pool) =>{
 
 //close function for queries
 const getLogin = makeQuery(queryLogin, pool)
+const getDashBoardDaily = makeQuery(queryDashBoard, pool)
+const getDashBoardProgress = makeQuery(queryDashBoardProgress, pool)
 
 //core and configure passport
 passport.use(new LocalStrategy(
@@ -103,6 +114,32 @@ const API_KEY = global.env.API_KEY || ""
 const ENDPOINT_FOOD_SEARCH = 'https://api.spoonacular.com/food/menuItems/search'
 const ENDPOINT_FOOD_ID_SEARCH = 'https://api.spoonacular.com/food/menuItems/'
 
+//GET Request: Retrieve Progress data from mysql
+app.get('/dashboard/progress/:date', (req, resp)=>{
+    const date = req.params.date.slice(0, 19)
+    const name = req.params.date.slice(19, 23)
+
+    console.log('>>>dashboard date read: ', date)
+
+    getDashBoardProgress([date, name])
+    .then(result=>{
+        resp.status(200).json(result)
+    })
+})
+
+//GET Request: Retrieve daily nutrient data from mysql
+app.get('/dashboard/:date', (req, resp)=>{
+    const date = req.params.date.slice(0, 19)
+    const name = req.params.date.slice(19, 23)
+
+    console.log('>>>dashboard date read: ', date)
+
+    getDashBoardDaily([date, name])
+    .then(result=>{
+        resp.status(200).json(result)
+    })
+})
+
 //POST Request: Browse for food id
 app.post('/', async (req, resp) => {
     const url = withQuery(
@@ -133,7 +170,7 @@ app.post('/', async (req, resp) => {
     resp.json(result)
 })
 
-//POST Request: Browse foor nutrient by id
+//POST Request: Browse food nutrient by id
 app.post('/id', async (req, resp) => {
 
     foodNutrientResult = []
@@ -167,10 +204,14 @@ app.post('/save', (req, resp)=>{
             await conn.beginTransaction()
             
             for( let e of todayFoodList) {
-            await conn.query(`INSERT INTO nutrition (food, calories, carbohydrates, fat, sugar, protein, cholesterol, fiber, date, username, foodId)
-             values (?, ?, ?, ?, ?, ?, ?, ? ,? ,?, ?)`,
-             [e.title, e.calories, e.carbs, e.fat, e.sugar, e.protein,
-             e.cholesterol, e.fiber, `${new Date().toJSON().slice(0, 10)} 00:00:00`, e.username, e.id] )
+            await conn.query(`INSERT INTO nutrition (food, calories, carbohydrates, fat, sugar, protein, cholesterol, 
+                fiber, date, username, foodId, caloriesNeeded, carbsNeeded, fatNeeded, sugarNeeded, proteinNeeded, 
+                cholesterolNeeded, fiberNeeded, saturatedNeeded, saturated, trans, transNeeded) 
+                values (?, ?, ?, ?, ?, ?, ?, ? ,? ,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [e.title, e.calories, e.carbs, e.fat, e.sugar, e.protein,
+                e.cholesterol, e.fiber, `${new Date().toJSON().slice(0, 10)} 00:00:00`, e.username, e.id, e.caloriesNeeded, 
+                e.carbsNeeded, e.fatNeeded, e.sugarNeeded, e.proteinNeeded, e.cholesterolNeeded, e.fiberNeeded, e.saturatedNeeded, 
+                e.saturated, e.trans, e.transNeeded] )
             }
             await conn.commit()
         } catch(e){
