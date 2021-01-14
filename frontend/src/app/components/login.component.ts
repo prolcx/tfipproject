@@ -46,4 +46,8 @@ export class LoginComponent implements OnInit {
   signUp() {
     this.router.navigate([ '/signup' ])
   }
+
+  signInWithGoogle() {
+    this.authAvc.loginGoogle()
+  }
 }

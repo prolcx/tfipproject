@@ -11,6 +11,8 @@ const jwt = require('jsonwebtoken')
 const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy
 
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+
 const nodemailer = require('nodemailer')
 
 //mongo seteup
@@ -105,6 +107,51 @@ passport.use(new LocalStrategy(
         })
     }
 ))
+
+//configure google passport
+passport.use(new GoogleStrategy({
+    clientID: global.env.GOOGLE_CLIENT_ID,
+    clientSecret: global.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: 'http://localhost:3001/auth/google/callback'
+  },
+  function(accessToken, refreshToken, profile, done) {
+
+    console.info('Google profile: ', profile)
+
+    getLogin(profile.emails[0].value).then((result)=>{
+        if (result.length>0){
+            done(null, profile)
+        }
+        else {
+            const insertUser = async (username, password, email, gender) =>{
+                const conn = await pool.getConnection()
+                try{
+                    await conn.beginTransaction()
+                    await conn.query(`INSERT INTO login (username, password, email, gender) values (?, ?, ?, ?)`,
+                        [username, password, email, gender] )
+                    await conn.commit()
+                    await done(null, profile)
+                } catch(e){
+                    conn.rollback()
+                    console.info('mysql - newuser input rollback occurred')
+                } finally {
+                    conn.release()
+                }
+            }
+            insertUser(profile.emails[0].value, sha1(profile.emails[0].value), profile.emails[0].value, 'notincluded')
+        }
+    })
+
+  }
+));
+
+passport.serializeUser(function(user, done) {
+    done(null, user);
+  });
+  
+  passport.deserializeUser(function(user, done) {
+    done(null, user);
+  });
 
 //configure express, morgan, body parser, secure-env, passport
 const app = express()
@@ -312,6 +359,42 @@ app.post('/login',
         resp.json({ message: `Login in at ${new Date()}`, token, username: req.user.username})
     }
 )
+
+//GET Request: Google Passport login route
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['email', 'profile'] })
+  );
+
+//GET Request: Google Callback Function
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/' }),
+  (req, resp)=> {
+    //authorise token
+    //set up new user in mongo
+    //sign in with the existing user
+    console.info(`google user: `, req.user)
+
+    const currTime= (new Date()).getTime()/1000
+        const token = jwt.sign({
+            sub: 'req.user.username',
+            iss: 'myapp',
+            iat: currTime,
+            // nbf: currTime,
+            // exp: currTime + 1000000,
+            data: {
+                avatar: req.user.avatar,
+                loginTime: req.user.loginTime
+            }
+        }, global.env.TOKEN_SECRET)
+        
+        let responseHTML = '<html><head><title>Main</title></head><body></body><script>res = %value%; window.opener.postMessage(res, "*");window.close();</script></html>'
+        responseHTML = responseHTML.replace('%value%', JSON.stringify({
+        user: req.user,
+        token
+    }));
+    resp.status(200).send(responseHTML);
+  });
+
 
 //POST Request: Register a new account
 app.post('/signup', async (req, resp, next) => {
