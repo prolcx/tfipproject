@@ -1,20 +1,20 @@
 
 <div class="row mt-2">
 	<div class="col">
-		<h2>Food Lab</h2>
+		<h2 class="display-2">FOOD LAB</h2>
 	</div>
 </div>
 
 <form [formGroup] = 'loginForm'>
 	<div class="form-group">
-		<label for="username">Username</label>
+		<label id="loginFormField" for="username">Username</label>
 		<input id="username" class="form-control" type="text" placeholder="Username here" formControlName='username'>
 		<!-- <div class="invalid-feedback" *ngIf="errorMessage">
 			{{ errorMessage }}
 		</div> -->
 	</div>
 	<div class="form-group">
-		<label for="password">Password</label>
+		<label id="loginFormField" for="password">Password</label>
 		<input type="password" id="password" class="form-control" placeholder="Password" formControlName='password'>
 	</div>
 
@@ -27,4 +27,4 @@
 </form>
 
 <button (click)='signInWithGoogle()'>Sign in with Google</button>
-<button (click)='signUp()'>Sign up</button>
+<button (click)='signUp()'>Sign Me Up! </button>

@@ -14,6 +14,14 @@
 .image { 
     position: absolute;
     /* width: 25%; */
-    top: 150px;
+    top: 260px;
     right: 0px;
+ }
+
+ #foodAddButton {
+     font-weight: 500;
+ }
+
+ #barText {
+     font-weight: 400;
  }

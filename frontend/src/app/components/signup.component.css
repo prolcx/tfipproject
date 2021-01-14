@@ -1,3 +1,7 @@
 .display-1 {
-    font-weight: bold;
+    font-weight: 200;
+  }
+
+  #signUpLabel {
+    font-size: x-large;
   }

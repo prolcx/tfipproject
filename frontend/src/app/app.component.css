@@ -1,3 +1,15 @@
 .container {
     padding: 10px;
+    position: relative;
+    z-index: 3;
+    top: 100px;
+}
+.bg{
+    z-index: 1;
+    position: fixed;
+    width: 100%;
+    top: 0px;
+    left: 0px;
+    height: 100%;
+    opacity: 0.5
 }
