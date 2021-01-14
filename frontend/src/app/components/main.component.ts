@@ -119,7 +119,7 @@ export class MainComponent implements OnInit {
       date: `${this.dashboardForm.get('date').value} 00:00:00`,
       name: this.memorySvc.loginUser
     }
-
+  
     await this.foodSvc.dashBoardLoading(selection)
     .then((result)=>{
       console.log('>>>loading result: ', result)

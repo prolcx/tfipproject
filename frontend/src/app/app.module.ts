@@ -10,9 +10,11 @@ import { MainComponent } from './components/main.component';
 import { AddfoodComponent } from './components/addfood.component';
 import { FoodService, MemoryService, AuthService } from './food.service';
 import { UnauthorizedComponent } from './components/unauthorized.component';
+import { SignupComponent } from './components/signup.component';
 
 const ROUTES: Routes = [
   { path: '', component: LoginComponent },
+  { path: 'signup', component: SignupComponent },
   { path: 'dashboard', component: MainComponent,
     canActivate: [AuthService] },
   { path: 'addfood', component: AddfoodComponent,
@@ -27,7 +29,8 @@ const ROUTES: Routes = [
     LoginComponent,
     MainComponent,
     AddfoodComponent,
-    UnauthorizedComponent
+    UnauthorizedComponent,
+    SignupComponent
   ],
   imports: [
     BrowserModule, HttpClientModule,

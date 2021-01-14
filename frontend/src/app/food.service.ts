@@ -10,6 +10,7 @@ const SERVER_INSERT_SAVE = '/save'
 const SERVER_DASHBOARD_DELETE = '/dashboard/delete'
 
 const SERVER_INSERT_LOGIN = '/login'
+const SERVER_INSERT_SIGNUP = '/signup'
 
 @Injectable()
 
@@ -48,6 +49,12 @@ export class FoodService {
     async deleteDashBoardFood(id): Promise<any>{
         console.log(id)
         return await this.http.delete<any>(`${SERVER_DASHBOARD_DELETE}/${id}`)
+        .toPromise()
+    }
+
+    async registerUser(userDetail): Promise<any>{
+        // console.log(userDetail)
+        return await this.http.post<any>(SERVER_INSERT_SIGNUP, userDetail)
         .toPromise()
     }
 }

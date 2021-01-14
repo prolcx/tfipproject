@@ -11,6 +11,8 @@ const jwt = require('jsonwebtoken')
 const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy
 
+const nodemailer = require('nodemailer')
+
 //mongo seteup
 const MongoClient = require('mongodb').MongoClient
 const MONGO_URL = 'mongodb://localhost:27017'
@@ -122,7 +124,8 @@ const ENDPOINT_FOOD_ID_SEARCH = 'https://api.spoonacular.com/food/menuItems/'
 //GET Request: Retrieve Progress data from mysql
 app.get('/dashboard/progress/:date', (req, resp)=>{
     const date = req.params.date.slice(0, 19)
-    const name = req.params.date.slice(19, 23)
+    const paramsLength = req.params.date.length
+    const name = req.params.date.slice(19, paramsLength)
 
     console.log('>>>dashboard date read: ', date)
 
@@ -135,7 +138,8 @@ app.get('/dashboard/progress/:date', (req, resp)=>{
 //GET Request: Retrieve daily nutrient data from mysql
 app.get('/dashboard/:date', (req, resp)=>{
     const date = req.params.date.slice(0, 19)
-    const name = req.params.date.slice(19, 23)
+    const paramsLength = req.params.date.length
+    const name = req.params.date.slice(19, paramsLength)
 
     console.log('>>>dashboard date read: ', date)
 
@@ -308,6 +312,58 @@ app.post('/login',
         resp.json({ message: `Login in at ${new Date()}`, token, username: req.user.username})
     }
 )
+
+//POST Request: Register a new account
+app.post('/signup', async (req, resp, next) => {
+  
+    const username = req.body.username
+    const password = sha1(req.body.password)
+    const email = req.body.email
+    const gender = req.body.gender
+
+    const insertUser = async (username, password, email, gender) =>{
+        const conn = await pool.getConnection()
+        try{
+            await conn.beginTransaction()
+            await conn.query(`INSERT INTO login (username, password, email, gender) values (?, ?, ?, ?)`,
+                [username, password, email, gender] )
+            await conn.commit()
+            await next()
+        } catch(e){
+            conn.rollback()
+            console.info('mysql - newuser input rollback occurred')
+        } finally {
+            conn.release()
+        }
+    }
+    insertUser(username, password, email, gender)
+},
+(req, resp)=>{
+    var transporter = nodemailer.createTransport({
+        service: global.env.HOST_EMAIL_SERVICE,
+        auth: {
+          user: global.env.HOST_EMAIL,
+          pass: global.env.HOST_EMAIL_PASSWORD
+        }
+      });
+      
+    var mailOptions = {
+    from: global.env.HOST_EMAIL,
+    to: req.body.email,
+    subject: 'Account Registered',
+    text: `You just craeted a new account named "${req.body.username}" in the Food Lab!!`
+    };
+      
+    transporter.sendMail(mailOptions, function(error, info){
+    if (error) {
+        console.log('Cant send email: ', error);
+    } else {
+        console.log('Email sent: ' + info.response);
+    }
+    });
+    resp.status(200)
+    resp.json({})
+})
 
 //DELETE Request: Deleting selected item in mysql via id
 app.delete('/dashboard/delete/:id', (req, resp)=>{
